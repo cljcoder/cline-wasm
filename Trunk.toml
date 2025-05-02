@@ -1,0 +1,11 @@
+# Trunk configuration for proxying API requests
+
+# Proxy requests starting with `/api/` to the backend server
+# running on http://localhost:3000
+[[proxy]]
+backend = "http://localhost:3000/api/"
+# The rewrite is optional if the backend expects the /api/ prefix.
+# If the backend routes are defined without /api/ (e.g., just /log),
+# you would uncomment the rewrite line. In our case, the backend route
+# is /api/log, so we don't need a rewrite.
+# rewrite = "/api/"

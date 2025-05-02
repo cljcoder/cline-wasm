@@ -1,0 +1,51 @@
+[package]
+name = "cline-wasm"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+egui = "0.27.2"
+eframe = { version = "0.27.2", default-features = false, features = [
+    "accesskit",     # Make egui comptaible with screen readers
+    "default_fonts", # Embed the default egui fonts.
+    "glow",          # Use the glow rendering backend. Alternative: "wgpu".
+    "persistence",   # Enable restoring app state when restarting the app.
+] }
+log = "0.4"
+
+# You only need serde if you want app persistence:
+serde = { version = "1", features = ["derive"] }
+
+# Backend dependencies (native only)
+tokio = { version = "1", features = ["full"], optional = true }
+axum = { version = "0.7", optional = true }
+tower-http = { version = "0.5.0", features = ["cors"], optional = true }
+tracing = "0.1.41"
+tracing-subscriber = "0.3.19"
+
+# native:
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+env_logger = "0.10"
+tokio = { version = "1", features = ["full"] }
+axum = "0.7"
+tower-http = { version = "0.5.0", features = ["cors"] }
+
+# web:
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+console_error_panic_hook = "0.1.7"
+console_log = "1.0"
+reqwest = { version = "0.12", features = ["json"] } # For making HTTP requests from Wasm
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+web-sys = { version = "0.3", features = [
+    "Document",
+    "Window",
+    "Element",
+]}
+
+
+# Define a separate binary for the backend server
+[[bin]]
+name = "server"
+path = "src/server.rs"
+required-features = ["axum", "tokio", "tower-http"] # Ensure server features are enabled when building this binary

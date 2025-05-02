@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>eframe :: egui</title>
+    <style>
+      html {
+        /* Remove touch delay: */
+        touch-action: manipulation;
+      }
+      body {
+        /* Light mode background color for what is visible before WASM loads: */
+        background: #f0f0f0;
+      }
+      @media (prefers-color-scheme: dark) {
+        body {
+          /* Dark mode background color for what is visible before WASM loads: */
+          background: #404040;
+        }
+      }
+      /* Allow canvas to fill entire web page: */
+      html, body {
+        overflow: hidden;
+        margin: 0 !important;
+        padding: 0 !important;
+        height: 100%;
+        width: 100%;
+      }
+      /* Position canvas in center-top: */
+      canvas {
+        margin-right: auto;
+        margin-left: auto;
+        display: block;
+        position: absolute;
+        top: 0%;
+        left: 50%;
+        transform: translate(-50%, 0%);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- The WASM code will resize this canvas to cover the entire screen -->
+    <canvas id="the_canvas_id"></canvas>
+
+    <!-- Trunk will automatically inject the necessary script to load the Wasm module -->
+  </body>
+</html>
