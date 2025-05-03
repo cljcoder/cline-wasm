@@ -6,65 +6,79 @@ This project demonstrates a simple Rust application compiled to WebAssembly (Was
 
 Before you begin, ensure you have the following installed:
 
-1.  **Rust Toolchain:** Install Rust using `rustup` from [https://rustup.rs/](https://rustup.rs/). This includes `cargo`.
-2.  **wasm-pack:** Install `wasm-pack` for building Rust Wasm projects:
-    ```bash
-    cargo install wasm-pack
-    ```
-3.  **Local Web Server:** You'll need a simple HTTP server to serve the files locally. If you have Python installed, you can use its built-in server. Alternatively, you can install one like `miniserve`:
-    ```bash
-    cargo install miniserve
-    ```
+1.  **Rust Toolchain & Wasm Target:**
+    *   Install Rust using `rustup` from [https://rustup.rs/](https://rustup.rs/). This includes `cargo`.
+    *   Add the Wasm compilation target required for building the frontend:
+        ```bash
+        rustup target add wasm32-unknown-unknown
+        ```
 
-## Compilation
+## Manual Build & Run (Alternative)
 
-1.  **Clone the repository:**
+This method uses `wasm-pack` to build the frontend assets, which can then be served by any static file server. Note that this method **does not** automatically run the backend server or handle API proxying like the recommended `trunk` development method.
+
+1.  **Install Additional Prerequisites:**
+    *   Install `wasm-pack`:
+        ```bash
+        cargo install wasm-pack
+        ```
+    *   Ensure you have a local web server (e.g., Python's built-in server or `miniserve`):
+        ```bash
+        # Example using miniserve
+        cargo install miniserve
+        ```
+2.  **Clone the Repository:**
     ```bash
     # Replace with the actual repository URL
     git clone <repository-url>
     cd cline-wasm
     ```
-2.  **Build the Wasm package:** Navigate to the project's root directory (where `Cargo.toml` is located) and run:
+3.  **Build the Wasm Package:** Navigate to the project's root directory and run:
     ```bash
     wasm-pack build --target web
     ```
     This command compiles the Rust code into Wasm and generates necessary JavaScript bindings in a `pkg/` directory.
 
-## Running the Application
+4.  **Run the Backend Server (Manually):** If you need the backend functionality, you still need to run it separately as described in the Development section (which will be added next):
+    ```bash
+    cargo run --bin server --features axum,tokio,tower-http
+    ```
 
-1.  **Start a local web server:** From the project's root directory, start a web server to serve the `index.html` file and the `pkg/` directory.
-
+5.  **Start a Local Web Server:** From the project's root directory, start a web server to serve the `index.html` file and the `pkg/` directory.
     *   **Using Python 3:**
         ```bash
-        python -m http.server
+        python -m http.server 8080
         ```
     *   **Using `miniserve`:**
         ```bash
-        miniserve . --index index.html
+        miniserve . --index index.html -p 8080
         ```
-    *   **Other servers:** Use your preferred local web server, ensuring it serves the root directory.
+    *   **Important:** When running this way, the frontend code making the request to `http://localhost:8080/api/log` will **fail** unless you manually adjust the URL in `src/main.rs` to point directly to the backend (`http://localhost:3000/api/log`) and handle potential CORS issues, as `trunk`'s proxy is not involved.
 
-2.  **Open in Browser:** Open your web browser and navigate to the address provided by the server (usually `http://localhost:8000` or `http://127.0.0.1:8080`). You should see the application running.
+6.  **Open in Browser:** Open your web browser and navigate to `http://localhost:8080`.
 
-## Development with Trunk and Backend Server
+## Development (Recommended)
 
-This project now includes a simple backend server for handling API requests from the frontend. For development, you'll need to run both the backend server and the `trunk` development server.
+This method uses `trunk` for a streamlined development experience with auto-reloading and proxying to the backend. It assumes you have completed the main **Prerequisites** section (Rust toolchain and Wasm target installed).
 
-1.  **Install Prerequisites:**
-    *   Ensure you have the Rust toolchain installed ([https://rustup.rs/](https://rustup.rs/)).
-    *   Install `trunk` and `wasm-bindgen-cli`:
-        ```bash
-        cargo install --locked trunk
-        cargo install wasm-bindgen-cli
-        ```
-
-2.  **Run the Backend Server:** Open a terminal in the project's root directory and run the backend server, explicitly enabling the required features:
+1.  **Install Development Tools:** Install `trunk` and `wasm-bindgen-cli`:
+    ```bash
+    cargo install --locked trunk
+    cargo install wasm-bindgen-cli
+    ```
+2.  **Clone the Repository:**
+    ```bash
+    # Replace with the actual repository URL
+    git clone <repository-url>
+    cd cline-wasm
+    ```
+3.  **Run the Backend Server:** Open a terminal in the project's root directory and run the backend server, explicitly enabling the required features:
     ```bash
     cargo run --bin server --features axum,tokio,tower-http
     ```
     This will compile and start the backend server, which listens on `http://localhost:3000`. Keep this terminal running.
 
-3.  **Run the Frontend Dev Server:** Open a *second* terminal in the project's root directory and run `trunk`:
+4.  **Run the Frontend Dev Server:** Open a *second* terminal in the project's root directory and run `trunk`:
     ```bash
     trunk serve --open
     ```
@@ -75,7 +89,7 @@ This project now includes a simple backend server for handling API requests from
     *   Automatically rebuild and reload the page when frontend code changes.
     *   The `--open` flag will automatically open the application in your default web browser.
 
-4.  **Test the Interaction:**
+5.  **Test the Interaction:**
     *   Once the page loads in the browser, click the "Click Me" button.
     *   Check the terminal where you ran `cargo run --bin server`. You should see the message "I am server" printed each time you click the button.
     *   You will also see log messages in the browser's developer console.
