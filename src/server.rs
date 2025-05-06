@@ -1,10 +1,19 @@
 use axum::{
     http::StatusCode,
     routing::post,
+    Json, // Import Json extractor
     Router,
 };
+use serde::Deserialize; // Import Deserialize
 use std::net::SocketAddr;
 use tower_http::cors::{Any, CorsLayer};
+
+// Define a struct to deserialize the incoming JSON data
+#[derive(Deserialize, Debug)] // Add Debug for easy printing
+struct UserData {
+    name: String,
+    age: String,
+}
 
 #[tokio::main]
 async fn main() {
@@ -30,8 +39,9 @@ async fn main() {
     axum::serve(listener, app).await.unwrap();
 }
 
-// Handler for POST /api/log
-async fn log_message() -> StatusCode {
-    println!("I am server"); // Print the message to the server's console
+// Handler for POST /api/log, now accepting JSON data
+async fn log_message(Json(payload): Json<UserData>) -> StatusCode {
+    // Print the received data to the server's console
+    println!("Received data: Name = {}, Age = {}", payload.name, payload.age);
     StatusCode::OK // Respond with HTTP 200 OK
 }
