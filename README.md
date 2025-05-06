@@ -80,16 +80,20 @@ This method uses `trunk` for a streamlined development experience with auto-relo
 
 4.  **Run the Frontend Dev Server:** Open a *second* terminal in the project's root directory and run `trunk`:
     ```bash
-    trunk serve --open
+    # For local development only:
+    # trunk serve --open
+
+    # To allow access from other devices on your network (recommended for testing on different hosts):
+    trunk serve --address 0.0.0.0 --port 8080 --open
     ```
     This command will:
     *   Build the Wasm frontend.
-    *   Start the `trunk` development server (usually on `http://localhost:8080`).
-    *   Proxy requests starting with `/api/` to the backend server running on port 3000 (as configured in `Trunk.toml`).
+    *   Start the `trunk` development server (listening on the specified address and port, e.g., `http://0.0.0.0:8080`).
+    *   The frontend application now connects directly to the backend server (running on port 3000). The previous proxy configuration in `Trunk.toml` has been removed as the frontend dynamically determines the backend URL.
     *   Automatically rebuild and reload the page when frontend code changes.
-    *   The `--open` flag will automatically open the application in your default web browser.
+    *   The `--open` flag (optional) will attempt to open the application in your default web browser.
 
 5.  **Test the Interaction:**
-    *   Once the page loads in the browser, click the "Click Me" button.
-    *   Check the terminal where you ran `cargo run --bin server`. You should see the message "I am server" printed each time you click the button.
+    *   Once the page loads in the browser (e.g., at `http://<your-local-ip>:8080/`), enter some data and click the "Click Me" button.
+    *   Check the terminal where you ran `cargo run --bin server`. You should see a message similar to "Received data: Name = [your_name], Age = [your_age]" printed each time you click the button.
     *   You will also see log messages in the browser's developer console.
