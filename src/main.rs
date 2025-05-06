@@ -69,8 +69,12 @@ fn trigger_server_log(name: &str, age: &str) { // Accept name and age
     };
     wasm_bindgen_futures::spawn_local(async move { // move form_data into the async block
         let client = reqwest::Client::new();
-        let url = "http://localhost:8080/api/log"; // Use absolute URL
-        match client.post(url)
+        // Dynamically get hostname and construct URL for port 3000
+        let location = web_sys::window().unwrap().location();
+        let hostname = location.hostname().unwrap_or_else(|_| "localhost".to_string()); // Fallback to localhost if hostname fails
+        let url = format!("http://{}:3000/api/log", hostname);
+        log::info!("Sending request to: {}", url); // Log the constructed URL
+        match client.post(&url) // Use the constructed URL
             .json(&form_data) // Send data as JSON
             .send().await {
             Ok(response) => {
