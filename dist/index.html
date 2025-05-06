@@ -38,7 +38,7 @@
         transform: translate(-50%, 0%);
       }
     </style>
-  <link rel="modulepreload" href="/cline-wasm-61822771a2f5fab5.js" crossorigin="anonymous" integrity="sha384-FOAMykmIYfgY51ay2PPFfvzvhP8EXgimMK0CHrf2H+p7D+MoqntzDMnsnquQuHKS"><link rel="preload" href="/cline-wasm-61822771a2f5fab5_bg.wasm" crossorigin="anonymous" integrity="sha384-iTRLCnym2ueQuFhC8dtxe5rg+liqOBx4F9QP94bMw/QUzvIsgkWgPFEQmkanKXkV" as="fetch" type="application/wasm"></head>
+  <link rel="modulepreload" href="/cline-wasm-d134e3994f228f94.js" crossorigin="anonymous" integrity="sha384-A+ygVDqSwCOiSIC5HgGDWpPT1zzktLZMdY16gozJR/h30OemNUQKOz60kSBxwhUw"><link rel="preload" href="/cline-wasm-d134e3994f228f94_bg.wasm" crossorigin="anonymous" integrity="sha384-Y1VG1Ajx1UmbYwvn3PnI2JCU770vpD5Ymz+6ax0Ouxg1f/NX3mt0oX+E4WO0M+Bo" as="fetch" type="application/wasm"></head>
   <body>
     <!-- The WASM code will resize this canvas to cover the entire screen -->
     <canvas id="the_canvas_id"></canvas>
@@ -46,8 +46,8 @@
     <!-- Trunk will automatically inject the necessary script to load the Wasm module -->
   
 <script type="module">
-import init, * as bindings from '/cline-wasm-61822771a2f5fab5.js';
-const wasm = await init({ module_or_path: '/cline-wasm-61822771a2f5fab5_bg.wasm' });
+import init, * as bindings from '/cline-wasm-d134e3994f228f94.js';
+const wasm = await init({ module_or_path: '/cline-wasm-d134e3994f228f94_bg.wasm' });
 
 
 window.wasmBindings = bindings;

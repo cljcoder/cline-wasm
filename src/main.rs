@@ -37,9 +37,17 @@ fn main() {
     });
 }
 
+#[derive(serde::Serialize)] // Add Serialize for sending data
+struct FormData {
+    name: String,
+    age: String,
+}
 
 #[derive(Default)]
-struct MyApp {}
+struct MyApp {
+    name: String,
+    age: String,
+}
 
 impl MyApp {
     /// Called once before the first frame.
@@ -50,24 +58,26 @@ impl MyApp {
         // for e.g. egui::PaintCallback.
         Self::default()
     }
-}
-
+} // <-- Add missing closing brace for impl MyApp
 
 // Function to send request to backend
 #[cfg(target_arch = "wasm32")]
-fn trigger_server_log() {
-    wasm_bindgen_futures::spawn_local(async {
+fn trigger_server_log(name: &str, age: &str) { // Accept name and age
+    let form_data = FormData {
+        name: name.to_string(),
+        age: age.to_string(),
+    };
+    wasm_bindgen_futures::spawn_local(async move { // move form_data into the async block
         let client = reqwest::Client::new();
-        // URL of the backend server endpoint
-        // Use the full URL including the host where trunk serves the frontend.
-        // The trunk proxy will intercept this request based on the path.
         let url = "http://localhost:8080/api/log"; // Use absolute URL
-        match client.post(url).send().await {
+        match client.post(url)
+            .json(&form_data) // Send data as JSON
+            .send().await {
             Ok(response) => {
                 if response.status().is_success() {
-                    log::info!("Successfully triggered server log.");
+                    log::info!("Successfully sent data to server.");
                 } else {
-                    log::error!("Failed to trigger server log: {}", response.status());
+                    log::error!("Failed to send data: {}", response.status());
                 }
             }
             Err(err) => {
@@ -79,18 +89,37 @@ fn trigger_server_log() {
 
 impl eframe::App for MyApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        egui::CentralPanel::default().show(ctx, |ui| {
-            ui.vertical_centered(|ui| {
-                // Add a button instead of the heading
-                if ui.button("Click Me").clicked() {
-                    // Call the function to send request to backend
-                    #[cfg(target_arch = "wasm32")]
-                    trigger_server_log();
+        // Use a movable window instead of CentralPanel
+        egui::Window::new("Input Form")
+            .default_open(true) // Keep window open by default
+            .resizable(true)
+            .show(ctx, |ui| {
+                ui.vertical(|ui| { // Use vertical layout within the window
+                    // Name field
+                    ui.horizontal(|ui| {
+                        ui.label("Name:");
+                        ui.text_edit_singleline(&mut self.name);
+                    });
 
-                    // Provide feedback in the browser console as well (optional)
-                    log::info!("Button clicked, attempting to trigger server log...");
-                }
+                    // Age field
+                    ui.horizontal(|ui| {
+                        ui.label("Age:");
+                        ui.text_edit_singleline(&mut self.age);
+                    });
+
+                    // Add some spacing
+                    ui.add_space(10.0);
+
+                    // Button
+                    if ui.button("Click Me").clicked() {
+                        // Call the function to send request to backend with current name and age
+                        #[cfg(target_arch = "wasm32")]
+                        trigger_server_log(&self.name, &self.age);
+
+                        // Provide feedback in the browser console as well (optional)
+                        log::info!("Button clicked, attempting to send data: Name='{}', Age='{}'", self.name, self.age);
+                    }
+                });
             });
-        });
     }
 }
