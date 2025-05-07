@@ -47,7 +47,7 @@ struct MyApp {
     name: String,
     age: String,
     current_time_title: Option<String>, // To store fetched time for browser/viewport title update
-    input_form_title: String,           // To store title for the egui input window
+    digital_clock_time: String,         // To store time for the large digital clock
 }
 
 impl Default for MyApp {
@@ -56,7 +56,7 @@ impl Default for MyApp {
             name: String::new(),
             age: String::new(),
             current_time_title: None,
-            input_form_title: "Input Form".to_string(),
+            digital_clock_time: "--:--:--".to_string(), // Default clock display
         }
     }
 }
@@ -101,8 +101,15 @@ fn trigger_server_log(name: &str, age: &str) { // Accept name and age
 
 impl eframe::App for MyApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        // Use a movable window instead of CentralPanel
-        egui::Window::new(&self.input_form_title) // Use dynamic title
+        // Central Panel for the digital clock
+        egui::CentralPanel::default().show(ctx, |ui| {
+            ui.centered_and_justified(|ui| {
+                ui.label(egui::RichText::new(&self.digital_clock_time).size(60.0));
+            });
+        });
+
+        // Input Form Window
+        egui::Window::new("Input Goes Here!") // Static title
             .default_open(true) // Keep window open by default
             .resizable(true)
             .show(ctx, |ui| {
@@ -175,7 +182,7 @@ impl eframe::App for MyApp {
                                                             // Use channels or Arc<Mutex<>> for safety.
                                                             unsafe {
                                                                 (*app_ptr).current_time_title = Some(time_str.clone());
-                                                                (*app_ptr).input_form_title = time_str;
+                                                                (*app_ptr).digital_clock_time = time_str;
                                                             }
                                                         }
                                                         Err(err) => log::error!("Failed to parse time response: {}", err),
