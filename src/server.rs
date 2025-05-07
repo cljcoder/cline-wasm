@@ -1,9 +1,10 @@
 use axum::{
     http::StatusCode,
-    routing::post,
+    routing::{get, post}, // Add get
     Json, // Import Json extractor
     Router,
 };
+use chrono::Local; // For getting current time
 use serde::Deserialize; // Import Deserialize
 use std::net::SocketAddr;
 use tower_http::cors::{Any, CorsLayer};
@@ -30,6 +31,8 @@ async fn main() {
     let app = Router::new()
         // `POST /api/log` will be handled by the `log_message` handler
         .route("/api/log", post(log_message))
+        // `GET /api/time` will be handled by the `get_time` handler
+        .route("/api/time", get(get_time))
         .layer(cors); // Apply the CORS middleware
 
     // Run our app with hyper, listening globally on port 3000
@@ -44,4 +47,11 @@ async fn log_message(Json(payload): Json<UserData>) -> StatusCode {
     // Print the received data to the server's console
     println!("Received data: Name = {}, Age = {}", payload.name, payload.age);
     StatusCode::OK // Respond with HTTP 200 OK
+}
+
+// Handler for GET /api/time
+async fn get_time() -> (StatusCode, String) {
+    let now = Local::now();
+    let time_str = now.format("%H:%M:%S").to_string();
+    (StatusCode::OK, time_str)
 }

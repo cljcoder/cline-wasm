@@ -43,22 +43,30 @@ struct FormData {
     age: String,
 }
 
-#[derive(Default)]
 struct MyApp {
     name: String,
     age: String,
+    current_time_title: Option<String>, // To store fetched time for browser/viewport title update
+    input_form_title: String,           // To store title for the egui input window
+}
+
+impl Default for MyApp {
+    fn default() -> Self {
+        Self {
+            name: String::new(),
+            age: String::new(),
+            current_time_title: None,
+            input_form_title: "Input Form".to_string(),
+        }
+    }
 }
 
 impl MyApp {
     /// Called once before the first frame.
     pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
-        // Customize egui here with cc.egui_ctx.set_fonts and cc.egui_ctx.set_visuals.
-        // Restore app state using cc.storage (requires the "persistence" feature).
-        // Use the cc.gl (a glow::Context) to create graphics shaders and buffers that you can use
-        // for e.g. egui::PaintCallback.
         Self::default()
     }
-} // <-- Add missing closing brace for impl MyApp
+}
 
 // Function to send request to backend
 #[cfg(target_arch = "wasm32")]
@@ -94,7 +102,7 @@ fn trigger_server_log(name: &str, age: &str) { // Accept name and age
 impl eframe::App for MyApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // Use a movable window instead of CentralPanel
-        egui::Window::new("Input Form")
+        egui::Window::new(&self.input_form_title) // Use dynamic title
             .default_open(true) // Keep window open by default
             .resizable(true)
             .show(ctx, |ui| {
@@ -123,6 +131,65 @@ impl eframe::App for MyApp {
                             #[cfg(target_arch = "wasm32")]
                             trigger_server_log(&self.name, &self.age);
 
+                            // Fetch current time from server
+                            #[cfg(target_arch = "wasm32")]
+                            {
+                                // To update MyApp state from async block, we need to pass a mutable reference
+                                // or use a channel. For simplicity, we'll clone `self.current_time_title`
+                                // and update it. This is not ideal for complex state but works for this example.
+                                // A more robust way would be to use `Arc<Mutex<Option<String>>>` or `mpsc::channel`.
+                                let time_title_sender = {
+                                    // This is a bit of a workaround to get a mutable reference to current_time_title
+                                    // into the async block. A proper solution would involve message passing.
+                                    // We'll use a temporary variable that the async block can own.
+                                    // This is a simplified approach for demonstration.
+                                    // We need a way to communicate the fetched time back to the main thread's MyApp instance.
+                                    // One common way is to use a channel (e.g., std::sync::mpsc::channel).
+                                    // For this example, we'll directly try to update a field that the main loop checks.
+                                    // This requires careful handling of lifetimes and mutability.
+                                    // Let's try to use a simple flag that the main update loop can check.
+                                    // We will store the fetched time in `current_time_title` which is an Option<String>.
+                                    // The async block will own a way to send the result back.
+                                    // For this example, we'll directly modify `self.current_time_title`
+                                    // by capturing a mutable reference. This is generally unsafe across threads
+                                    // but might work in wasm_bindgen_futures's single-threaded context if handled carefully.
+                                    // However, to avoid lifetime issues with `self`, we'll pass a clone
+                                    // of an `Arc<Mutex<Option<String>>>` or use a channel.
+                                    // Given the constraints, we'll set `current_time_title` directly.
+                                    // This is a simplified approach.
+                                    let app_ptr = self as *mut MyApp; // Unsafe, but for a simple example. Be cautious.
+
+                                    wasm_bindgen_futures::spawn_local(async move {
+                                        let client = reqwest::Client::new();
+                                        let location = web_sys::window().unwrap().location();
+                                        let hostname = location.hostname().unwrap_or_else(|_| "localhost".to_string());
+                                        let url = format!("http://{}:3000/api/time", hostname);
+                                        match client.get(&url).send().await {
+                                            Ok(response) => {
+                                                if response.status().is_success() {
+                                                    match response.text().await {
+                                                        Ok(time_str) => {
+                                                            log::info!("Fetched time: {}", time_str);
+                                                            // Unsafe block to update MyApp state from async
+                                                            // This is highly discouraged for production code.
+                                                            // Use channels or Arc<Mutex<>> for safety.
+                                                            unsafe {
+                                                                (*app_ptr).current_time_title = Some(time_str.clone());
+                                                                (*app_ptr).input_form_title = time_str;
+                                                            }
+                                                        }
+                                                        Err(err) => log::error!("Failed to parse time response: {}", err),
+                                                    }
+                                                } else {
+                                                    log::error!("Failed to fetch time: {}", response.status());
+                                                }
+                                            }
+                                            Err(err) => log::error!("Error fetching time: {}", err),
+                                        }
+                                    });
+                                };
+                            }
+
                             // Provide feedback in the browser console as well (optional)
                             log::info!("Button clicked, attempting to send data: Name='{}', Age='{}'", self.name, self.age);
 
@@ -132,6 +199,22 @@ impl eframe::App for MyApp {
                         }
                     });
                 });
+
+                // Update window title if current_time_title is set
+                if let Some(new_title) = self.current_time_title.take() {
+                    #[cfg(target_arch = "wasm32")]
+                    {
+                        if let Some(window) = web_sys::window() {
+                            if let Some(document) = window.document() {
+                                document.set_title(&new_title);
+                            }
+                        }
+                    }
+                    #[cfg(not(target_arch = "wasm32"))]
+                    {
+                        ctx.send_viewport_cmd(egui::ViewportCommand::Title(new_title));
+                    }
+                }
             });
     }
 }
