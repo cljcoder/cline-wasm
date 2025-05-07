@@ -41,7 +41,7 @@ This method uses `wasm-pack` to build the frontend assets, which can then be ser
 
 4.  **Run the Backend Server (Manually):** If you need the backend functionality, you still need to run it separately as described in the Development section (which will be added next):
     ```bash
-    cargo run --bin server --features axum,tokio,tower-http
+    cargo run --bin server --features axum,tokio,tower-http,chrono
     ```
 
 5.  **Start a Local Web Server:** From the project's root directory, start a web server to serve the `index.html` file and the `pkg/` directory.
@@ -74,7 +74,7 @@ This method uses `trunk` for a streamlined development experience with auto-relo
     ```
 3.  **Run the Backend Server:** Open a terminal in the project's root directory and run the backend server, explicitly enabling the required features:
     ```bash
-    cargo run --bin server --features axum,tokio,tower-http
+    cargo run --bin server --features axum,tokio,tower-http,chrono
     ```
     This will compile and start the backend server, which listens on `http://localhost:3000`. Keep this terminal running.
 
