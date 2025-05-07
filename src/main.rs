@@ -115,14 +115,22 @@ impl eframe::App for MyApp {
                     ui.add_space(10.0);
 
                     // Button
-                    if ui.button("Click Me").clicked() {
-                        // Call the function to send request to backend with current name and age
-                        #[cfg(target_arch = "wasm32")]
-                        trigger_server_log(&self.name, &self.age);
+                    ui.with_layout(egui::Layout::top_down_justified(egui::Align::Center), |ui| {
+                        if ui.add(egui::Button::new("Click Me")
+                            .fill(egui::Color32::from_rgb(0x8B, 0x00, 0x00)) // Dark red
+                        ).clicked() {
+                            // Call the function to send request to backend with current name and age
+                            #[cfg(target_arch = "wasm32")]
+                            trigger_server_log(&self.name, &self.age);
 
-                        // Provide feedback in the browser console as well (optional)
-                        log::info!("Button clicked, attempting to send data: Name='{}', Age='{}'", self.name, self.age);
-                    }
+                            // Provide feedback in the browser console as well (optional)
+                            log::info!("Button clicked, attempting to send data: Name='{}', Age='{}'", self.name, self.age);
+
+                            // Clear the fields
+                            self.name.clear();
+                            self.age.clear();
+                        }
+                    });
                 });
             });
     }
