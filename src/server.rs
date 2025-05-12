@@ -10,6 +10,7 @@ use std::{net::SocketAddr, env, sync::Arc};
 use dotenvy::dotenv;
 use sqlx::PgPool;
 use tower_http::cors::{Any, CorsLayer};
+use serde_json::json;
 
 // Define a struct to deserialize the incoming JSON data
 #[derive(Deserialize, Debug)] // Add Debug for easy printing
@@ -81,15 +82,30 @@ async fn log_message(
     State(state): State<AppState>,
     Json(payload): Json<UserData>,
 ) -> Result<StatusCode, (StatusCode, String)> {
-    // Print the received data to the server's console
-    tracing::info!("Received data: Name = {}, Age = {}", payload.name, payload.age);
+    // Validate name
+    if payload.name.len() < 1 {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            json!({"error": "Name must be at least 1 character long"}).to_string(),
+        ));
+    }
 
-    // Attempt to parse age string to i32. Handle potential errors.
+    // Validate age
     let age_as_i32 = match payload.age.parse::<i32>() {
-        Ok(age_val) => Some(age_val),
+        Ok(age_val) => {
+            if age_val < 0 || age_val > 140 {
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    json!({"error": "Age must be between 0 and 140"}).to_string(),
+                ));
+            }
+            Some(age_val)
+        }
         Err(_) => {
-            tracing::warn!("Could not parse age '{}' to i32. Storing as NULL.", payload.age);
-            None // Store as NULL if parsing fails
+            return Err((
+                StatusCode::BAD_REQUEST,
+                json!({"error": "Could not parse age to i32"}).to_string(),
+            ));
         }
     };
 
@@ -107,7 +123,7 @@ async fn log_message(
             tracing::error!("Failed to insert data into database: {}", e);
             Err((
                 StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Failed to log message: {}", e),
+                json!({"error": format!("Failed to log message: {}", e)}).to_string(),
             ))
         }
     }

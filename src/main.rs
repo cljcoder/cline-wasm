@@ -63,6 +63,8 @@ struct MyApp {
 
     #[cfg(target_arch = "wasm32")]
     _time_fetch_interval: Option<Interval>, // Keep interval alive
+    #[cfg(target_arch = "wasm32")]
+    error_message: Arc<Mutex<Option<String>>>,
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -110,6 +112,8 @@ impl Default for MyApp {
             digital_clock_time: "--:--:--".to_string(),
             #[cfg(target_arch = "wasm32")]
             _time_fetch_interval: None,
+            #[cfg(target_arch = "wasm32")]
+            error_message: Arc::new(Mutex::new(None)),
         }
     }
 }
@@ -147,7 +151,7 @@ impl MyApp {
 
 // Function to send request to backend
 #[cfg(target_arch = "wasm32")]
-fn trigger_server_log(name: &str, age: &str) {
+fn trigger_server_log(name: &str, age: &str, error_message: Arc<Mutex<Option<String>>>, ctx: egui::Context) {
     let form_data = FormData {
         name: name.to_string(),
         age: age.to_string(),
@@ -165,8 +169,31 @@ fn trigger_server_log(name: &str, age: &str) {
                     Ok(response) => {
                         if response.ok() {
                             log::info!("Successfully sent data to server.");
+                            *error_message.lock().unwrap() = None;
+                            ctx.request_repaint();
                         } else {
                             log::error!("Failed to send data: {}", response.status());
+                            match response.text().await {
+                                Ok(error_text) => {
+                                    log::error!("Error body: {}", error_text);
+                                    // Parse the JSON error response
+                                    if let Ok(error_json) = serde_json::from_str::<serde_json::Value>(&error_text) {
+                                        if let Some(error_message_text) = error_json.get("error").and_then(|v| v.as_str()) {
+                                            // Store the error message in the state variable
+                                            *error_message.lock().unwrap() = Some(error_message_text.to_string());
+                                            ctx.request_repaint();
+                                            // Clear the error message after 3 seconds
+                                            gloo_timers::callback::Timeout::new(3000, move || {
+                                                *error_message.lock().unwrap() = None;
+                                                ctx.request_repaint();
+                                            }).forget();
+                                        }
+                                    }
+                                },
+                                Err(err) => {
+                                    log::error!("Failed to get error text: {}", err);
+                                }
+                            }
                         }
                     }
                     Err(err) => {
@@ -215,13 +242,19 @@ impl eframe::App for MyApp {
                     // Add some spacing
                     ui.add_space(10.0);
 
+                    // Display error message
+                    #[cfg(target_arch = "wasm32")]
+                    if let Some(error_message_text) = self.error_message.lock().unwrap().as_ref() {
+                        ui.colored_label(egui::Color32::RED, error_message_text);
+                    }
+
                     // Button
                     ui.with_layout(egui::Layout::top_down_justified(egui::Align::Center), |ui| {
                         if ui.add(egui::Button::new("Click Me")
                             .fill(egui::Color32::from_rgb(0x8B, 0x00, 0x00)) // Dark red
                         ).clicked() {
                             #[cfg(target_arch = "wasm32")]
-                            trigger_server_log(&self.name, &self.age);
+                            trigger_server_log(&self.name, &self.age, self.error_message.clone(), ctx.clone());
 
                             #[cfg(target_arch = "wasm32")]
                             {
