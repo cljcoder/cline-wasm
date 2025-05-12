@@ -23,6 +23,9 @@ tower-http = { version = "0.5.0", features = ["cors"], optional = true }
 tracing = "0.1.41"
 tracing-subscriber = "0.3.19"
 chrono = { version = "0.4", features = ["serde"], optional = true }
+sqlx = { version = "0.7", features = [ "runtime-tokio-rustls", "postgres", "macros", "chrono" ], optional = true }
+config = { version = "0.14", features = ["toml"], optional = true }
+dotenvy = { version = "0.15", optional = true }
 
 # native:
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
@@ -58,4 +61,4 @@ web-sys = { version = "0.3", features = [
 [[bin]]
 name = "server"
 path = "src/server.rs"
-required-features = ["axum", "tokio", "tower-http", "chrono"] # Ensure server features are enabled when building this binary
+required-features = ["axum", "tokio", "tower-http", "chrono", "sqlx", "config", "dotenvy"] # Ensure server features are enabled when building this binary

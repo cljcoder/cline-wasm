@@ -6,6 +6,10 @@ This project demonstrates a simple Rust application compiled to WebAssembly (Was
 
 Before you begin, ensure you have the following installed:
 
+## Configuration
+
+This project uses a `.env` file to store sensitive information such as database connection details. After checking out the repository, you will need to copy the `.env.example` file to `.env` and enter your database connection details.
+
 1.  **Rust Toolchain & Wasm Target:**
     *   Install Rust using `rustup` from [https://rustup.rs/](https://rustup.rs/). This includes `cargo`.
     *   Add the Wasm compilation target required for building the frontend:

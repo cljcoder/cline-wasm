@@ -1,0 +1,2 @@
+# Replace with your actual PostgreSQL connection string
+# Example: DATABASE_URL="postgres://username:password@localhost:5432/database_name"
